@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>❓ 疑問詞クイズ | Question Words Quiz</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E❓%3C/text%3E%3C/svg%3E">
+<style>
+/* ============ RESET & BASE ============ */
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+  background: linear-gradient(135deg, #FFE66D 0%, #FF8AB0 50%, #4ECDC4 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  color: #2C3E50;
+  overflow-x: hidden;
+  -webkit-user-select: none; user-select: none;
+}
+button { font-family: inherit; }
+
+/* ============ APP CONTAINER ============ */
+#app { max-width: 720px; margin: 0 auto; min-height: 100vh; padding: 0.8rem; position: relative; }
+
+/* ============ SCREENS ============ */
+.screen { animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-10px); }
+  40% { transform: translateX(10px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+@keyframes pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  60% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-8px) rotate(3deg); }
+}
+
+/* ============ HEADER / NAV ============ */
+.top-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 0.5rem; padding: 0.3rem 0 0.8rem;
+}
+.back-home-btn {
+  background: white; border: none; padding: 0.6rem 1rem; border-radius: 20px;
+  font-size: 0.95rem; font-weight: 800; cursor: pointer; color: #2C3E50;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+  display: flex; align-items: center; gap: 0.3rem;
+}
+.back-home-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
+.screen-title {
+  font-size: 1.15rem; font-weight: 900; color: #fff;
+  text-shadow: 2px 2px 0 #1A535C;
+}
+.nav-spacer { min-width: 54px; }
+
+/* ============ HOME ============ */
+.home-title {
+  text-align: center; font-size: 2.4rem; color: #fff;
+  text-shadow: 4px 4px 0 #1A535C, 6px 6px 0 rgba(0,0,0,0.2);
+  margin: 2rem 0 0.3rem; font-weight: 900;
+  animation: float 3s ease-in-out infinite;
+}
+.home-subtitle {
+  text-align: center; color: #fff; font-size: 1rem;
+  margin-bottom: 2rem; text-shadow: 2px 2px 0 #1A535C;
+  font-weight: 700;
+}
+.home-buttons { display: flex; flex-direction: column; gap: 1.2rem; padding: 1.5rem 0.5rem; }
+.home-btn {
+  background: white; border: none; padding: 1.5rem 1.2rem; border-radius: 24px;
+  font-size: 1.2rem; font-weight: 900; cursor: pointer;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.18);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  display: flex; align-items: center; gap: 1rem;
+  text-align: left;
+}
+.home-btn:active { transform: translateY(6px); box-shadow: 0 2px 0 rgba(0,0,0,0.18); }
+.home-btn .icon { font-size: 2.8rem; flex-shrink: 0; }
+.home-btn .label { flex: 1; }
+.home-btn .label-sub {
+  font-size: 0.85rem; opacity: 0.6; font-weight: 600;
+  display: block; margin-top: 0.2rem;
+}
+.home-btn.quiz { color: #FF6B6B; }
+.home-btn.intro { color: #4ECDC4; }
+
+.home-footer {
+  text-align: center; color: #fff; font-weight: 700;
+  text-shadow: 1px 1px 0 #1A535C; opacity: 0.8;
+  margin-top: 2rem; font-size: 0.85rem;
+}
+
+/* ============ INTRO ============ */
+.intro-card {
+  background: white; border-radius: 24px; padding: 1.5rem 1.2rem;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.12);
+  text-align: center; animation: pop 0.4s ease;
+}
+.intro-badge {
+  display: inline-block; padding: 0.3rem 0.9rem;
+  background: var(--word-color, #FF6B6B); color: white;
+  border-radius: 14px; font-size: 0.85rem; font-weight: 800;
+  margin-bottom: 0.6rem;
+}
+.intro-word {
+  font-size: 3rem; font-weight: 900; line-height: 1.1;
+  color: var(--word-color, #FF6B6B);
+  margin-bottom: 0.3rem;
+}
+.intro-ja {
+  font-size: 1rem; color: #666; font-weight: 700;
+  margin-bottom: 1rem;
+}
+.intro-play-word {
+  background: var(--word-color, #4ECDC4); border: none; color: white;
+  border-radius: 50px; padding: 0.5rem 1.2rem; cursor: pointer;
+  font-size: 0.95rem; font-weight: 800;
+  box-shadow: 0 4px 0 var(--word-shadow, #2BA39B);
+  margin-bottom: 0.5rem;
+}
+.intro-play-word:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--word-shadow, #2BA39B); }
+.intro-examples {
+  text-align: left; background: #F8F9FA; border-radius: 16px;
+  padding: 0.8rem; margin: 1rem 0 0.3rem;
+}
+.intro-example {
+  margin: 0.6rem 0; display: flex; align-items: center;
+  gap: 0.6rem; padding: 0.4rem; background: white; border-radius: 12px;
+}
+.intro-example-text { flex: 1; font-size: 0.95rem; line-height: 1.5; }
+.intro-example-q { font-weight: 800; color: var(--word-color, #FF6B6B); display: block; }
+.intro-example-a { color: #2C3E50; font-weight: 700; display: block; margin-top: 0.15rem; }
+.intro-play-btn {
+  background: #4ECDC4; border: none; color: white; border-radius: 50%;
+  width: 42px; height: 42px; cursor: pointer; font-size: 1.1rem;
+  box-shadow: 0 3px 0 #2BA39B; flex-shrink: 0;
+}
+.intro-play-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #2BA39B; }
+
+.intro-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1rem 0.3rem; gap: 0.5rem;
+}
+.intro-nav button {
+  background: white; border: none; padding: 0.8rem 1.2rem;
+  border-radius: 16px; font-size: 1rem; font-weight: 800;
+  cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.15); color: #2C3E50;
+}
+.intro-nav button:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
+.intro-nav button:disabled { opacity: 0.35; cursor: not-allowed; }
+.intro-indicator {
+  color: #fff; font-weight: 900; text-shadow: 2px 2px 0 #1A535C;
+  background: rgba(255,255,255,0.15); padding: 0.4rem 0.9rem;
+  border-radius: 14px;
+}
+
+/* ============ SETUP ============ */
+.setup-desc {
+  text-align: center; color: #fff;
+  text-shadow: 2px 2px 0 #1A535C; padding: 0.3rem 0 0.8rem;
+  font-weight: 800;
+}
+.setup-desc small { font-size: 0.85rem; opacity: 0.9; font-weight: 700; }
+
+.setup-actions-top {
+  display: flex; gap: 0.5rem; padding: 0 0.3rem 0.5rem;
+}
+.mini-btn {
+  flex: 1; background: white; border: none; padding: 0.65rem;
+  border-radius: 14px; font-size: 0.9rem; font-weight: 800;
+  cursor: pointer; color: #2C3E50;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.15);
+}
+.mini-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
+
+.word-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem;
+  padding: 0.3rem;
+}
+.word-card {
+  background: white; border-radius: 18px; padding: 0.8rem 0.7rem;
+  cursor: pointer; border: 4px solid transparent;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+  position: relative;
+  box-shadow: 0 5px 0 rgba(0,0,0,0.15);
+}
+.word-card.selected { border-color: var(--word-color, #FF6B6B); background: #FFF8F8; }
+.word-card:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.15); }
+.word-card .en { font-size: 1.15rem; font-weight: 900; color: var(--word-color, #FF6B6B); }
+.word-card .ja { font-size: 0.8rem; color: #666; margin-top: 0.15rem; font-weight: 700; }
+.word-card .count { font-size: 0.7rem; color: #999; margin-top: 0.3rem; font-weight: 700; }
+.word-card .check { position: absolute; top: 0.4rem; right: 0.5rem; font-size: 1.1rem; opacity: 0; transition: opacity 0.15s; }
+.word-card.selected .check { opacity: 1; }
+
+.setup-status {
+  text-align: center; color: white; font-weight: 800;
+  text-shadow: 2px 2px 0 #1A535C; margin-top: 1rem;
+  font-size: 0.95rem;
+}
+
+.start-btn {
+  display: block; width: calc(100% - 0.6rem);
+  margin: 1.3rem 0.3rem 0.5rem;
+  background: #FF6B6B; color: white; border: none;
+  padding: 1.2rem; border-radius: 20px;
+  font-size: 1.3rem; font-weight: 900; cursor: pointer;
+  box-shadow: 0 6px 0 #C23B3B;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.start-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 #C23B3B; }
+.start-btn:disabled { background: #ccc; box-shadow: 0 6px 0 #999; cursor: not-allowed; }
+
+/* ============ QUIZ ============ */
+.quiz-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.3rem 0 0.6rem; gap: 0.5rem;
+}
+.quiz-progress, .quiz-score {
+  background: white; border-radius: 20px; padding: 0.45rem 0.9rem;
+  color: #2C3E50; font-size: 0.9rem; font-weight: 800;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.1);
+}
+
+.visual-card {
+  background: white; border-radius: 24px; padding: 0.9rem;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.12);
+  text-align: center;
+  animation: pop 0.4s ease;
+}
+.visual-inner {
+  width: 100%; aspect-ratio: 16/10; border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  background: linear-gradient(135deg, var(--grad1, #FFE66D), var(--grad2, #FF8AB0));
+}
+.visual-emoji {
+  font-size: 6.5rem;
+  filter: drop-shadow(3px 3px 0 rgba(0,0,0,0.15));
+  animation: float 3s ease-in-out infinite;
+}
+.answer-label {
+  font-size: 0.75rem; color: #888; margin-top: 0.7rem;
+  font-weight: 800; letter-spacing: 0.1em;
+}
+.answer-text {
+  font-size: 1.9rem; font-weight: 900; color: #2C3E50;
+  margin: 0.15rem 0 0.4rem; line-height: 1.2;
+  word-break: break-word;
+}
+
+.question-prompt {
+  text-align: center; font-size: 1.05rem; color: #fff;
+  text-shadow: 2px 2px 0 #1A535C;
+  margin: 0.7rem 0 0.5rem; font-weight: 800;
+}
+
+.choice-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;
+  padding: 0 0.3rem;
+}
+.choice-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+.choice-btn {
+  background: white; border: 4px solid transparent;
+  padding: 0.85rem 0.4rem; border-radius: 16px;
+  font-size: 1.05rem; font-weight: 900; cursor: pointer;
+  box-shadow: 0 5px 0 rgba(0,0,0,0.15);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.2s ease;
+  color: var(--word-color, #2C3E50);
+  text-align: center; line-height: 1.1;
+}
+.choice-grid.cols-3 .choice-btn { font-size: 0.9rem; padding: 0.7rem 0.3rem; }
+.choice-btn:not(:disabled):active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.15); }
+.choice-btn .ja-hint {
+  font-size: 0.65rem; color: #999; font-weight: 600;
+  display: block; margin-top: 0.15rem;
+}
+.choice-btn.correct {
+  background: #52BE80; color: white !important;
+  border-color: #3A9960;
+  animation: bounce 0.55s ease;
+}
+.choice-btn.correct .ja-hint { color: rgba(255,255,255,0.85) !important; }
+.choice-btn.wrong {
+  background: #FF6B6B; color: white !important;
+  border-color: #C23B3B;
+  animation: shake 0.4s ease;
+}
+.choice-btn.wrong .ja-hint { color: rgba(255,255,255,0.85) !important; }
+.choice-btn.dimmed { opacity: 0.35; }
+.choice-btn:disabled { cursor: default; }
+
+.quiz-feedback {
+  background: white; border-radius: 20px; padding: 1rem;
+  margin: 0.8rem 0.3rem 0.3rem;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.12);
+  text-align: center;
+  animation: pop 0.4s ease;
+}
+.feedback-mark {
+  font-size: 1.6rem; font-weight: 900;
+}
+.feedback-mark.ok { color: #52BE80; }
+.feedback-mark.ng { color: #FF6B6B; }
+.feedback-label {
+  font-size: 0.85rem; color: #999;
+  margin-top: 0.3rem; font-weight: 700;
+}
+.feedback-correct-word {
+  font-size: 1.8rem; font-weight: 900;
+  color: var(--word-color, #FF6B6B);
+  margin: 0.1rem 0;
+}
+.feedback-example {
+  color: #2C3E50; font-size: 0.95rem;
+  font-weight: 700; margin-top: 0.5rem;
+  line-height: 1.4; background: #F8F9FA;
+  border-radius: 12px; padding: 0.6rem;
+}
+.feedback-example .q-text { color: var(--word-color, #FF6B6B); }
+.feedback-example .a-text { color: #2C3E50; }
+
+.feedback-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+.feedback-actions button {
+  flex: 1; padding: 0.85rem 0.5rem; border: none;
+  border-radius: 14px; font-weight: 800;
+  cursor: pointer; font-size: 1rem;
+}
+.feedback-actions .speak-btn {
+  background: #4ECDC4; color: white; box-shadow: 0 4px 0 #2BA39B;
+}
+.feedback-actions .speak-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #2BA39B; }
+.feedback-actions .next-btn {
+  background: #FF6B6B; color: white; box-shadow: 0 4px 0 #C23B3B;
+}
+.feedback-actions .next-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #C23B3B; }
+
+/* ============ RESULT ============ */
+.result-card {
+  background: white; border-radius: 24px; padding: 2rem 1rem 1.5rem;
+  margin: 2rem 0.3rem 1rem; text-align: center;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.12);
+  animation: pop 0.5s ease;
+}
+.result-emoji { font-size: 5rem; animation: float 2s ease-in-out infinite; }
+.result-title { font-size: 1.6rem; font-weight: 900; margin: 0.4rem 0 0.2rem; }
+.result-score {
+  font-size: 3.5rem; font-weight: 900; color: #FF6B6B;
+  line-height: 1; margin: 0.3rem 0;
+}
+.result-score-total { font-size: 1.5rem; color: #888; }
+.result-score-pct { color: #888; font-weight: 800; margin-top: 0.2rem; }
+.result-comment {
+  margin: 0.8rem 0; color: #2C3E50; font-weight: 700;
+  font-size: 1rem;
+}
+.result-actions {
+  display: flex; flex-direction: column; gap: 0.6rem; padding: 0 0.3rem;
+}
+.result-actions button {
+  padding: 1rem; border: none; border-radius: 18px;
+  font-size: 1.1rem; font-weight: 900; cursor: pointer;
+}
+.result-actions .again {
+  background: #FF6B6B; color: white; box-shadow: 0 5px 0 #C23B3B;
+}
+.result-actions .again:active { transform: translateY(3px); box-shadow: 0 2px 0 #C23B3B; }
+.result-actions .setup-again {
+  background: #F8B739; color: white; box-shadow: 0 5px 0 #C28B28;
+}
+.result-actions .setup-again:active { transform: translateY(3px); box-shadow: 0 2px 0 #C28B28; }
+.result-actions .home {
+  background: #4ECDC4; color: white; box-shadow: 0 5px 0 #2BA39B;
+}
+.result-actions .home:active { transform: translateY(3px); box-shadow: 0 2px 0 #2BA39B; }
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 380px) {
+  .home-title { font-size: 1.9rem; }
+  .visual-emoji { font-size: 5rem; }
+  .answer-text { font-size: 1.5rem; }
+  .choice-btn { font-size: 0.95rem; padding: 0.7rem 0.3rem; }
+  .intro-word { font-size: 2.3rem; }
+  .result-score { font-size: 2.8rem; }
+  .home-btn { padding: 1.2rem 1rem; font-size: 1.1rem; }
+  .home-btn .icon { font-size: 2.3rem; }
+}
+@media (min-width: 700px) {
+  .word-grid { grid-template-columns: repeat(3, 1fr); }
+  .visual-emoji { font-size: 8rem; }
+  .answer-text { font-size: 2.4rem; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ==========================================
+// DATA: 疑問詞 (Question Words) - 13 types
+// ==========================================
+const QUESTION_WORDS = [
+  { id: 'what',      en: 'What',      ja: 'なに / もの',           color: '#FF6B6B', shadow: '#C23B3B' },
+  { id: 'who',       en: 'Who',       ja: 'だれ / ひと',           color: '#4ECDC4', shadow: '#2BA39B' },
+  { id: 'where',     en: 'Where',     ja: 'どこ / ばしょ',         color: '#45B7D1', shadow: '#2887A0' },
+  { id: 'when',      en: 'When',      ja: 'いつ / じかん',         color: '#FFA07A', shadow: '#CC7F5C' },
+  { id: 'why',       en: 'Why',       ja: 'なぜ / りゆう',         color: '#98D8C8', shadow: '#6FB3A1' },
+  { id: 'how',       en: 'How',       ja: 'どう / ほうほう',       color: '#F39C12', shadow: '#B87209' },
+  { id: 'how_long',  en: 'How long',  ja: 'どれくらい（期間・長さ）', color: '#BB8FCE', shadow: '#8E6BA0' },
+  { id: 'how_much',  en: 'How much',  ja: 'いくら（値段・量）',      color: '#85C1E2', shadow: '#5A96B7' },
+  { id: 'how_many',  en: 'How many',  ja: 'いくつ（数）',          color: '#F8B739', shadow: '#C28B28' },
+  { id: 'how_often', en: 'How often', ja: 'どのくらい（頻度）',     color: '#EC7063', shadow: '#B94D43' },
+  { id: 'how_old',   en: 'How old',   ja: 'なんさい',              color: '#52BE80', shadow: '#3A9960' },
+  { id: 'which',     en: 'Which',     ja: 'どちら / どれ',         color: '#E59866', shadow: '#B37345' },
+  { id: 'whose',     en: 'Whose',     ja: 'だれの',                color: '#A569BD', shadow: '#7E4A94' },
+];
+
+// ==========================================
+// DATA: 疑問詞の導入 (Introduction examples)
+// ==========================================
+const INTRO_EXAMPLES = {
+  what: [
+    { q: 'What is this?',            a: "It's an apple." },
+    { q: 'What do you like?',        a: 'I like pizza.' },
+    { q: 'What sport do you play?',  a: 'I play tennis.' },
+  ],
+  who: [
+    { q: 'Who is he?',               a: 'He is Tom.' },
+    { q: 'Who is that woman?',       a: 'She is my mother.' },
+    { q: 'Who is your teacher?',     a: 'Mr. Smith is my teacher.' },
+  ],
+  where: [
+    { q: 'Where do you live?',       a: 'I live in Tokyo.' },
+    { q: 'Where is your school?',    a: "It's near the park." },
+    { q: 'Where did you go?',        a: 'I went to the library.' },
+  ],
+  when: [
+    { q: 'When is your birthday?',   a: 'My birthday is on May 5th.' },
+    { q: 'When do you get up?',      a: 'I get up at 7:00.' },
+    { q: 'When do you play soccer?', a: 'I play soccer on Sunday.' },
+  ],
+  why: [
+    { q: 'Why are you happy?',       a: "Because today is my birthday." },
+    { q: 'Why do you like it?',      a: "Because it's fun." },
+    { q: 'Why did you stay home?',   a: 'Because I was sick.' },
+  ],
+  how: [
+    { q: 'How do you go to school?', a: 'I go by bus.' },
+    { q: 'How are you?',             a: "I'm fine, thank you." },
+    { q: 'How do you make curry?',   a: 'First, cut the vegetables.' },
+  ],
+  how_long: [
+    { q: 'How long have you lived here?', a: 'For 10 years.' },
+    { q: 'How long does it take?',        a: 'About 30 minutes.' },
+    { q: 'How long is the movie?',        a: "It's two hours long." },
+  ],
+  how_much: [
+    { q: 'How much is this?',        a: "It's 500 yen." },
+    { q: 'How much is the cake?',    a: "It's 10 dollars." },
+    { q: 'How much water do you drink?', a: 'I drink two liters.' },
+  ],
+  how_many: [
+    { q: 'How many apples do you have?', a: 'I have three apples.' },
+    { q: 'How many students are there?', a: 'There are twenty.' },
+    { q: 'How many cats do you have?',   a: 'I have two cats.' },
+  ],
+  how_often: [
+    { q: 'How often do you study English?', a: 'Every day.' },
+    { q: 'How often do you eat out?',       a: 'Twice a week.' },
+    { q: 'How often do you travel?',        a: 'Once a year.' },
+  ],
+  how_old: [
+    { q: 'How old are you?',               a: "I'm ten years old." },
+    { q: 'How old is your sister?',        a: 'She is twelve.' },
+    { q: 'How old is this building?',      a: "It's 100 years old." },
+  ],
+  which: [
+    { q: 'Which do you want, tea or coffee?', a: 'Coffee, please.' },
+    { q: 'Which is your bag?',                a: 'The red one.' },
+    { q: 'Which bus goes to the station?',    a: 'The number 5 bus.' },
+  ],
+  whose: [
+    { q: 'Whose pen is this?',       a: "It's Mary's." },
+    { q: 'Whose bag is that?',       a: "That's my sister's." },
+    { q: 'Whose book is on the desk?', a: "It's mine." },
+  ],
+};
+
+// ==========================================
+// DATA: 50 QUESTIONS
+// ==========================================
+const QUESTIONS = [
+  // ===== What (6) =====
+  { id: 1,  answer: 'an apple',     correct: 'what',  emoji: '🍎', grad: ['#FFE66D', '#FF8AB0'], exQ: 'What is this?' },
+  { id: 2,  answer: 'pizza',        correct: 'what',  emoji: '🍕', grad: ['#FFB347', '#FF6B6B'], exQ: 'What did you eat?' },
+  { id: 3,  answer: 'tennis',       correct: 'what',  emoji: '🎾', grad: ['#98D8C8', '#4ECDC4'], exQ: 'What sport do you play?' },
+  { id: 4,  answer: 'a book',       correct: 'what',  emoji: '📖', grad: ['#FFE66D', '#F8B739'], exQ: 'What do you have?' },
+  { id: 5,  answer: 'math',         correct: 'what',  emoji: '✏️', grad: ['#85C1E2', '#45B7D1'], exQ: 'What subject do you like?' },
+  { id: 6,  answer: 'a dog',        correct: 'what',  emoji: '🐕', grad: ['#F7DC6F', '#FFA07A'], exQ: 'What is your pet?' },
+
+  // ===== Who (5) =====
+  { id: 7,  answer: 'Tom',          correct: 'who',   emoji: '👨', grad: ['#85C1E2', '#5DADE2'], exQ: 'Who is he?' },
+  { id: 8,  answer: 'my mother',    correct: 'who',   emoji: '👩', grad: ['#FF8AB0', '#FF6B6B'], exQ: 'Who is that woman?' },
+  { id: 9,  answer: 'my teacher',   correct: 'who',   emoji: '👩‍🏫', grad: ['#BB8FCE', '#A569BD'], exQ: 'Who helps you at school?' },
+  { id: 10, answer: 'my brother',   correct: 'who',   emoji: '👦', grad: ['#85C1E2', '#4ECDC4'], exQ: 'Who is this boy?' },
+  { id: 11, answer: 'a doctor',     correct: 'who',   emoji: '👨‍⚕️', grad: ['#FFFFFF', '#85C1E2'], exQ: 'Who helps sick people?' },
+
+  // ===== Where (6) =====
+  { id: 12, answer: 'in the park',     correct: 'where', emoji: '🏞️', grad: ['#98D8C8', '#52BE80'], exQ: 'Where do you play?' },
+  { id: 13, answer: 'at the library',  correct: 'where', emoji: '📚', grad: ['#E59866', '#D68F54'], exQ: 'Where do you read books?' },
+  { id: 14, answer: 'in Tokyo',        correct: 'where', emoji: '🗼', grad: ['#FF6B6B', '#C23B3B'], exQ: 'Where do you live?' },
+  { id: 15, answer: 'at school',       correct: 'where', emoji: '🏫', grad: ['#F7DC6F', '#F8B739'], exQ: 'Where do you study?' },
+  { id: 16, answer: 'at home',         correct: 'where', emoji: '🏠', grad: ['#FFE66D', '#FFA07A'], exQ: 'Where are you now?' },
+  { id: 17, answer: 'at a restaurant', correct: 'where', emoji: '🍽️', grad: ['#FFFFFF', '#E59866'], exQ: 'Where did you eat?' },
+
+  // ===== When (6) =====
+  { id: 18, answer: 'on Monday',       correct: 'when',  emoji: '📅', grad: ['#85C1E2', '#45B7D1'], exQ: 'When do you have piano?' },
+  { id: 19, answer: 'in summer',       correct: 'when',  emoji: '☀️', grad: ['#FFE66D', '#FFA07A'], exQ: 'When do you go swimming?' },
+  { id: 20, answer: 'at 7:00',         correct: 'when',  emoji: '🕖', grad: ['#BB8FCE', '#A569BD'], exQ: 'When do you get up?' },
+  { id: 21, answer: 'yesterday',       correct: 'when',  emoji: '🗓️', grad: ['#F8B739', '#E59866'], exQ: 'When did you go there?' },
+  { id: 22, answer: 'on May 5th',      correct: 'when',  emoji: '🎏', grad: ['#4ECDC4', '#45B7D1'], exQ: 'When is your birthday?' },
+  { id: 23, answer: 'in the morning',  correct: 'when',  emoji: '🌅', grad: ['#FFE66D', '#FF8AB0'], exQ: 'When do you run?' },
+
+  // ===== Why (4) =====
+  { id: 24, answer: "Because I'm hungry.",      correct: 'why',   emoji: '🍔', grad: ['#F7DC6F', '#E59866'], exQ: 'Why do you want to eat?' },
+  { id: 25, answer: "Because it's raining.",    correct: 'why',   emoji: '🌧️', grad: ['#85C1E2', '#5A96B7'], exQ: 'Why did you bring an umbrella?' },
+  { id: 26, answer: 'Because I was tired.',     correct: 'why',   emoji: '😴', grad: ['#BB8FCE', '#A569BD'], exQ: 'Why did you sleep early?' },
+  { id: 27, answer: 'Because I love it.',       correct: 'why',   emoji: '❤️', grad: ['#FF8AB0', '#FF6B6B'], exQ: 'Why do you play soccer?' },
+
+  // ===== How (4) - means/method =====
+  { id: 28, answer: 'by bus',          correct: 'how',   emoji: '🚌', grad: ['#F8B739', '#FF6B6B'], exQ: 'How do you go to school?' },
+  { id: 29, answer: 'by train',        correct: 'how',   emoji: '🚆', grad: ['#98D8C8', '#4ECDC4'], exQ: 'How do you go to Tokyo?' },
+  { id: 30, answer: 'on foot',         correct: 'how',   emoji: '🚶', grad: ['#F7DC6F', '#F8B739'], exQ: 'How did you come here?' },
+  { id: 31, answer: 'by bike',         correct: 'how',   emoji: '🚲', grad: ['#85C1E2', '#45B7D1'], exQ: 'How do you go to the park?' },
+
+  // ===== How long (3) =====
+  { id: 32, answer: 'for 3 hours',       correct: 'how_long', emoji: '⏰', grad: ['#FFA07A', '#FF6B6B'], exQ: 'How long did you study?' },
+  { id: 33, answer: 'for two weeks',     correct: 'how_long', emoji: '📆', grad: ['#BB8FCE', '#8E6BA0'], exQ: 'How long was your trip?' },
+  { id: 34, answer: 'about 30 minutes',  correct: 'how_long', emoji: '⏱️', grad: ['#98D8C8', '#4ECDC4'], exQ: 'How long does it take?' },
+
+  // ===== How much (3) - price =====
+  { id: 35, answer: '500 yen',         correct: 'how_much', emoji: '💴', grad: ['#F7DC6F', '#F8B739'], exQ: 'How much is this pen?' },
+  { id: 36, answer: '10 dollars',      correct: 'how_much', emoji: '💵', grad: ['#98D8C8', '#52BE80'], exQ: 'How much is the book?' },
+  { id: 37, answer: '3,000 yen',       correct: 'how_much', emoji: '🪙', grad: ['#E59866', '#D68F54'], exQ: 'How much is the shirt?' },
+
+  // ===== How many (4) - count =====
+  { id: 38, answer: 'three apples',    correct: 'how_many', emoji: '🍎', grad: ['#FF8AB0', '#FF6B6B'], exQ: 'How many apples do you have?' },
+  { id: 39, answer: 'five books',      correct: 'how_many', emoji: '📚', grad: ['#85C1E2', '#45B7D1'], exQ: 'How many books did you read?' },
+  { id: 40, answer: 'two cats',        correct: 'how_many', emoji: '🐱', grad: ['#F7DC6F', '#FFA07A'], exQ: 'How many pets do you have?' },
+  { id: 41, answer: 'four pencils',    correct: 'how_many', emoji: '✏️', grad: ['#FFE66D', '#F8B739'], exQ: 'How many pencils are there?' },
+
+  // ===== How often (3) =====
+  { id: 42, answer: 'every day',       correct: 'how_often', emoji: '🌞', grad: ['#FFE66D', '#FF8AB0'], exQ: 'How often do you study English?' },
+  { id: 43, answer: 'twice a week',    correct: 'how_often', emoji: '📅', grad: ['#85C1E2', '#4ECDC4'], exQ: 'How often do you go to the gym?' },
+  { id: 44, answer: 'once a month',    correct: 'how_often', emoji: '🌙', grad: ['#BB8FCE', '#A569BD'], exQ: 'How often do you see your grandma?' },
+
+  // ===== How old (2) =====
+  { id: 45, answer: 'ten years old',           correct: 'how_old', emoji: '🎂', grad: ['#FF8AB0', '#FFE66D'], exQ: 'How old are you?' },
+  { id: 46, answer: 'twenty-five years old',   correct: 'how_old', emoji: '🎉', grad: ['#F7DC6F', '#FF6B6B'], exQ: 'How old is your sister?' },
+
+  // ===== Which (2) =====
+  { id: 47, answer: 'the red one',     correct: 'which', emoji: '🔴', grad: ['#FFE66D', '#FF6B6B'], exQ: 'Which pen do you want?' },
+  { id: 48, answer: 'the blue car',    correct: 'which', emoji: '🚙', grad: ['#85C1E2', '#45B7D1'], exQ: 'Which car is yours?' },
+
+  // ===== Whose (2) =====
+  { id: 49, answer: "It's Mary's.",          correct: 'whose', emoji: '🎀', grad: ['#FF8AB0', '#BB8FCE'], exQ: 'Whose pen is this?' },
+  { id: 50, answer: "It's my sister's.",     correct: 'whose', emoji: '🎒', grad: ['#E59866', '#FF8AB0'], exQ: 'Whose bag is that?' },
+];
+
+const QUIZ_LENGTH = 10;
+
+// ==========================================
+// STATE
+// ==========================================
+const state = {
+  screen: 'home',
+  introIdx: 0,
+  // Default: 6 basic question words selected
+  selected: new Set(['what', 'who', 'where', 'when', 'why', 'how']),
+  quiz: {
+    questions: [],
+    idx: 0,
+    score: 0,
+    answered: false,
+    wasCorrect: false,
+    availableWords: [],
+  },
+};
+
+// ==========================================
+// AUDIO (Web Speech API)
+// ==========================================
+let englishVoice = null;
+function initVoice() {
+  if (!('speechSynthesis' in window)) return;
+  const voices = speechSynthesis.getVoices();
+  englishVoice =
+    voices.find(v => v.name.includes('Google') && v.lang.startsWith('en-US')) ||
+    voices.find(v => v.name.includes('Google') && v.lang.startsWith('en')) ||
+    voices.find(v => v.lang === 'en-US' && v.name.toLowerCase().includes('female')) ||
+    voices.find(v => v.lang === 'en-US') ||
+    voices.find(v => v.lang === 'en-GB') ||
+    voices.find(v => v.lang.startsWith('en')) ||
+    null;
+}
+if ('speechSynthesis' in window) {
+  speechSynthesis.onvoiceschanged = initVoice;
+  initVoice();
+}
+function speak(text, rate = 0.92) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = rate;
+  u.pitch = 1.05;
+  if (englishVoice) u.voice = englishVoice;
+  speechSynthesis.speak(u);
+}
+
+// ==========================================
+// HELPERS
+// ==========================================
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function countByWord(wid) { return QUESTIONS.filter(q => q.correct === wid).length; }
+function getWordInfo(id) { return QUESTION_WORDS.find(w => w.id === id); }
+function goto(s) { state.screen = s; render(); window.scrollTo(0, 0); }
+
+// ==========================================
+// RENDER ROUTER
+// ==========================================
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  switch (state.screen) {
+    case 'home':   renderHome(app); break;
+    case 'intro':  renderIntro(app); break;
+    case 'setup':  renderSetup(app); break;
+    case 'quiz':   renderQuiz(app); break;
+    case 'result': renderResult(app); break;
+  }
+}
+
+// ==========================================
+// HOME
+// ==========================================
+function renderHome(app) {
+  app.innerHTML = `
+    <div class="screen">
+      <h1 class="home-title">❓ 疑問詞クイズ ❓</h1>
+      <p class="home-subtitle">Question Words Quiz</p>
+      <div class="home-buttons">
+        <button class="home-btn intro" id="btn-intro">
+          <span class="icon">📖</span>
+          <span class="label">疑問詞の導入
+            <span class="label-sub">Introduction to Question Words</span>
+          </span>
+        </button>
+        <button class="home-btn quiz" id="btn-quiz">
+          <span class="icon">🎮</span>
+          <span class="label">クイズを始める
+            <span class="label-sub">Start the Quiz</span>
+          </span>
+        </button>
+      </div>
+      <p class="home-footer">13種類 / 全50問 / 1セット10問</p>
+    </div>
+  `;
+  document.getElementById('btn-intro').onclick = () => { state.introIdx = 0; goto('intro'); };
+  document.getElementById('btn-quiz').onclick = () => goto('setup');
+}
+
+// ==========================================
+// INTRO
+// ==========================================
+function renderIntro(app) {
+  const word = QUESTION_WORDS[state.introIdx];
+  const examples = INTRO_EXAMPLES[word.id];
+
+  app.innerHTML = `
+    <div class="screen">
+      <div class="top-nav">
+        <button class="back-home-btn" id="btn-home">🏠 ホーム</button>
+        <div class="intro-indicator">${state.introIdx + 1} / ${QUESTION_WORDS.length}</div>
+        <div class="nav-spacer"></div>
+      </div>
+      <div class="intro-card" style="--word-color: ${word.color}; --word-shadow: ${word.shadow}">
+        <div class="intro-badge">${word.id.replace('_', ' ').toUpperCase()}</div>
+        <div class="intro-word">${word.en}</div>
+        <div class="intro-ja">${word.ja}</div>
+        <button class="intro-play-word" id="play-word">🔊 発音を聞く</button>
+        <div class="intro-examples">
+          ${examples.map((ex, i) => `
+            <div class="intro-example">
+              <div class="intro-example-text">
+                <span class="intro-example-q">Q: ${ex.q}</span>
+                <span class="intro-example-a">A: ${ex.a}</span>
+              </div>
+              <button class="intro-play-btn play-ex" data-i="${i}" aria-label="Play">🔊</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="intro-nav">
+        <button id="prev" ${state.introIdx === 0 ? 'disabled' : ''}>◀ 前へ</button>
+        <button id="next" ${state.introIdx === QUESTION_WORDS.length - 1 ? 'disabled' : ''}>次へ ▶</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('btn-home').onclick = () => goto('home');
+  document.getElementById('play-word').onclick = () => speak(word.en, 0.85);
+  document.querySelectorAll('.play-ex').forEach(btn => {
+    btn.onclick = () => {
+      const i = parseInt(btn.dataset.i);
+      const ex = examples[i];
+      speak(`${ex.q} ${ex.a}`);
+    };
+  });
+  document.getElementById('prev').onclick = () => { if (state.introIdx > 0) { state.introIdx--; render(); } };
+  document.getElementById('next').onclick = () => { if (state.introIdx < QUESTION_WORDS.length - 1) { state.introIdx++; render(); } };
+}
+
+// ==========================================
+// SETUP (teacher selects question words)
+// ==========================================
+function renderSetup(app) {
+  const selectedPoolSize = [...state.selected].reduce((s, w) => s + countByWord(w), 0);
+  const canStart = state.selected.size >= 2 && selectedPoolSize >= 4;
+
+  app.innerHTML = `
+    <div class="screen">
+      <div class="top-nav">
+        <button class="back-home-btn" id="btn-home">🏠 ホーム</button>
+        <div class="screen-title">クイズ設定</div>
+        <div class="nav-spacer"></div>
+      </div>
+      <p class="setup-desc">
+        ✅ 出題する疑問詞を選んでください<br>
+        <small>（2種類以上を選択 / 1セット${QUIZ_LENGTH}問出題）</small>
+      </p>
+      <div class="setup-actions-top">
+        <button class="mini-btn" id="select-all">✅ 全て選択</button>
+        <button class="mini-btn" id="select-basic">📖 基本6種</button>
+        <button class="mini-btn" id="deselect-all">⬜ 解除</button>
+      </div>
+      <div class="word-grid">
+        ${QUESTION_WORDS.map(w => `
+          <div class="word-card ${state.selected.has(w.id) ? 'selected' : ''}"
+               data-id="${w.id}" style="--word-color: ${w.color}">
+            <div class="check">✅</div>
+            <div class="en">${w.en}</div>
+            <div class="ja">${w.ja}</div>
+            <div class="count">${countByWord(w.id)}問</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="setup-status">
+        選択中: ${state.selected.size}種類 / 合計 ${selectedPoolSize}問
+      </div>
+      <button class="start-btn" id="start" ${canStart ? '' : 'disabled'}>
+        🎮 クイズスタート！
+      </button>
+    </div>
+  `;
+
+  document.getElementById('btn-home').onclick = () => goto('home');
+  document.querySelectorAll('.word-card').forEach(card => {
+    card.onclick = () => {
+      const id = card.dataset.id;
+      if (state.selected.has(id)) state.selected.delete(id);
+      else state.selected.add(id);
+      render();
+    };
+  });
+  document.getElementById('select-all').onclick = () => {
+    QUESTION_WORDS.forEach(w => state.selected.add(w.id));
+    render();
+  };
+  document.getElementById('select-basic').onclick = () => {
+    state.selected = new Set(['what', 'who', 'where', 'when', 'why', 'how']);
+    render();
+  };
+  document.getElementById('deselect-all').onclick = () => {
+    state.selected.clear();
+    render();
+  };
+  document.getElementById('start').onclick = () => {
+    if (!canStart) return;
+    startQuiz();
+  };
+}
+
+function startQuiz() {
+  const pool = QUESTIONS.filter(q => state.selected.has(q.correct));
+  const shuffled = shuffle(pool);
+  const count = Math.min(QUIZ_LENGTH, shuffled.length);
+  state.quiz = {
+    questions: shuffled.slice(0, count),
+    idx: 0,
+    score: 0,
+    answered: false,
+    wasCorrect: false,
+    availableWords: [...state.selected],
+  };
+  goto('quiz');
+}
+
+// ==========================================
+// QUIZ
+// ==========================================
+function renderQuiz(app) {
+  const { questions, idx, score, answered, wasCorrect, availableWords } = state.quiz;
+  const q = questions[idx];
+  const correctWord = getWordInfo(q.correct);
+  const gridClass = availableWords.length > 6 ? 'choice-grid cols-3' : 'choice-grid';
+
+  app.innerHTML = `
+    <div class="screen">
+      <div class="quiz-header">
+        <button class="back-home-btn" id="btn-home">🏠</button>
+        <div class="quiz-progress">📋 ${idx + 1} / ${questions.length}</div>
+        <div class="quiz-score">⭐ ${score}</div>
+      </div>
+      <div class="visual-card">
+        <div class="visual-inner" style="--grad1: ${q.grad[0]}; --grad2: ${q.grad[1]}">
+          <div class="visual-emoji">${q.emoji}</div>
+        </div>
+        <div class="answer-label">ANSWER / 答え</div>
+        <div class="answer-text">${q.answer}</div>
+      </div>
+      <div class="question-prompt">🤔 どの疑問詞で聞いた？</div>
+      <div class="${gridClass}">
+        ${availableWords.map(wid => {
+          const w = getWordInfo(wid);
+          let cls = 'choice-btn';
+          if (answered) {
+            if (wid === q.correct) cls += ' correct';
+            else cls += ' dimmed';
+          }
+          return `<button class="${cls}" data-word="${wid}"
+                    style="--word-color: ${w.color}"
+                    ${answered ? 'disabled' : ''}>
+                    ${w.en}<span class="ja-hint">${w.ja.split(' / ')[0].split('（')[0]}</span>
+                  </button>`;
+        }).join('')}
+      </div>
+      ${answered ? `
+        <div class="quiz-feedback" style="--word-color: ${correctWord.color}">
+          <div class="feedback-mark ${wasCorrect ? 'ok' : 'ng'}">
+            ${wasCorrect ? '🎉 Great job!' : '😢 Oops!'}
+          </div>
+          <div class="feedback-label">正解の疑問詞は…</div>
+          <div class="feedback-correct-word">${correctWord.en}</div>
+          <div class="feedback-example">
+            <span class="q-text">Q: ${q.exQ}</span><br>
+            <span class="a-text">A: ${q.answer}</span>
+          </div>
+          <div class="feedback-actions">
+            <button class="speak-btn" id="speak">🔊 もう一度</button>
+            <button class="next-btn" id="next">
+              ${idx + 1 === questions.length ? '結果を見る ▶' : '次の問題 ▶'}
+            </button>
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+
+  document.getElementById('btn-home').onclick = () => {
+    if (confirm('ホームに戻りますか？\n進行中のクイズは終了します。')) goto('home');
+  };
+
+  if (!answered) {
+    document.querySelectorAll('.choice-btn').forEach(btn => {
+      btn.onclick = () => handleAnswer(btn.dataset.word, btn);
+    });
+  } else {
+    document.getElementById('speak').onclick = () => speak(`${q.exQ} ${q.answer}`);
+    document.getElementById('next').onclick = () => {
+      if (state.quiz.idx + 1 < state.quiz.questions.length) {
+        state.quiz.idx++;
+        state.quiz.answered = false;
+        render();
+      } else {
+        goto('result');
+      }
+    };
+  }
+}
+
+function handleAnswer(chosen, btn) {
+  const q = state.quiz.questions[state.quiz.idx];
+  const isCorrect = chosen === q.correct;
+  state.quiz.wasCorrect = isCorrect;
+  if (isCorrect) state.quiz.score++;
+
+  // Animate chosen button
+  if (isCorrect) {
+    btn.classList.add('correct');
+  } else {
+    btn.classList.add('wrong');
+  }
+
+  // Play audio of example question + answer
+  setTimeout(() => speak(`${q.exQ} ${q.answer}`), 350);
+
+  // Show feedback after short delay
+  setTimeout(() => {
+    state.quiz.answered = true;
+    render();
+  }, isCorrect ? 650 : 900);
+}
+
+// ==========================================
+// RESULT
+// ==========================================
+function renderResult(app) {
+  const { score, questions } = state.quiz;
+  const total = questions.length;
+  const pct = Math.round((score / total) * 100);
+  let emoji, title, comment;
+  if (pct === 100)     { emoji = '🏆'; title = 'Perfect!';     comment = '全問正解！すばらしい！'; }
+  else if (pct >= 80)  { emoji = '🌟'; title = 'Great!';       comment = 'よくできました！'; }
+  else if (pct >= 60)  { emoji = '👍'; title = 'Good!';        comment = 'いい感じ！その調子！'; }
+  else if (pct >= 40)  { emoji = '💪'; title = 'Keep going!';  comment = 'もう少し！頑張ろう！'; }
+  else                 { emoji = '📖'; title = "Let's learn!"; comment = '導入からもう一度見てみよう！'; }
+
+  app.innerHTML = `
+    <div class="screen">
+      <div class="top-nav">
+        <button class="back-home-btn" id="btn-home">🏠 ホーム</button>
+        <div class="screen-title">🎊 結果発表</div>
+        <div class="nav-spacer"></div>
+      </div>
+      <div class="result-card">
+        <div class="result-emoji">${emoji}</div>
+        <div class="result-title">${title}</div>
+        <div class="result-score">${score}<span class="result-score-total"> / ${total}</span></div>
+        <div class="result-score-pct">${pct}% 正解</div>
+        <div class="result-comment">${comment}</div>
+      </div>
+      <div class="result-actions">
+        <button class="again" id="again">🎮 もう一度クイズ (同じ設定)</button>
+        <button class="setup-again" id="setup-again">⚙️ 疑問詞を選び直す</button>
+        <button class="home" id="home">🏠 ホームへ戻る</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('again').onclick = () => startQuiz();
+  document.getElementById('setup-again').onclick = () => goto('setup');
+  document.getElementById('home').onclick = () => goto('home');
+  document.getElementById('btn-home').onclick = () => goto('home');
+}
+
+// ==========================================
+// INIT
+// ==========================================
+// Pre-warm TTS on first user tap (helps mobile Safari/Chrome)
+document.addEventListener('click', function primeTTS() {
+  if ('speechSynthesis' in window) {
+    const u = new SpeechSynthesisUtterance('');
+    speechSynthesis.speak(u);
+  }
+  document.removeEventListener('click', primeTTS);
+}, { once: true });
+
+render();
+</script>
+</body>
+</html>

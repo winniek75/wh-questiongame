@@ -178,6 +178,30 @@ button { font-family: inherit; }
 .feedback-mark.ok { color: #fff; text-shadow: 2px 2px 0 #3A9960; }
 .feedback-mark.ng { color: #fff; text-shadow: 2px 2px 0 #C23B3B; }
 
+/* ============ COMBO OVERLAY ============ */
+.combo-overlay {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  z-index: 200; pointer-events: none;
+  font-size: 2.8rem; font-weight: 900; color: #fff;
+  text-shadow: 3px 3px 0 rgba(0,0,0,0.3), 0 0 20px rgba(255,215,0,0.6);
+  animation: comboPop 1.5s ease-out forwards;
+}
+@keyframes comboPop {
+  0% { transform: scale(0); opacity: 0; }
+  15% { transform: scale(1.1); opacity: 1; }
+  25% { transform: scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.05) translateY(-30px); }
+}
+
+/* ============ NEAR-MISS / PERFECT ============ */
+.near-miss-msg { font-weight: 900; font-size: 1rem; padding: 0.6rem 1rem; border-radius: 14px; text-align: center; margin: 0.5rem 0; animation: pop 0.4s ease; }
+.near-miss-msg.near { background: #FFF3E0; color: #E65100; border: 2px solid #FFB74D; }
+.near-miss-msg.perfect {
+  background: linear-gradient(135deg, #FFD700, #FFA000); color: #fff; font-size: 1.3rem;
+  text-shadow: 0 0 10px rgba(255,215,0,0.8); box-shadow: 0 0 20px rgba(255,215,0,0.4);
+}
+
 /* ============ RESULT ============ */
 .result-card { background: white; border-radius: 24px; padding: 2rem 1rem 1.5rem; margin: 2rem 0.2rem 1rem; text-align: center; box-shadow: 0 8px 0 rgba(0,0,0,0.12); animation: pop 0.5s ease; }
 .result-emoji { font-size: 5rem; animation: float 2s ease-in-out infinite; }
@@ -494,7 +518,7 @@ const state = {
   screen: 'home',
   introIdx: 0,
   selected: new Set(['what', 'who', 'where', 'when', 'why', 'how']),
-  quiz: { questions: [], idx: 0, score: 0, answered: false, wasCorrect: false, availableWords: [] },
+  quiz: { questions: [], idx: 0, score: 0, answered: false, wasCorrect: false, availableWords: [], combo: 0, maxCombo: 0 },
 };
 
 // ==========================================
@@ -745,6 +769,7 @@ function startQuiz() {
     questions: shuffled.slice(0, count),
     idx: 0, score: 0, answered: false, wasCorrect: false,
     availableWords: [...state.selected],
+    combo: 0, maxCombo: 0,
   };
   goto('quiz');
 }
@@ -844,14 +869,29 @@ function renderQuiz(app) {
   }
 }
 
+function showComboOverlay(text) {
+  const existing = document.querySelector('.combo-overlay');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.className = 'combo-overlay';
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1500);
+}
+
 function handleAnswer(chosen, btn) {
   const q = state.quiz.questions[state.quiz.idx];
   const isCorrect = chosen === q.correct;
   state.quiz.wasCorrect = isCorrect;
   if (isCorrect) {
     state.quiz.score++;
+    state.quiz.combo++;
+    if (state.quiz.combo > state.quiz.maxCombo) state.quiz.maxCombo = state.quiz.combo;
     playCorrectSound();
+    const milestones = { 3: 'NICE! 🔥', 5: 'GREAT! ⚡', 7: 'AMAZING! 🌟', 10: 'UNSTOPPABLE! 💥' };
+    if (milestones[state.quiz.combo]) showComboOverlay(milestones[state.quiz.combo]);
   } else {
+    state.quiz.combo = 0;
     playWrongSound();
     recordWrongAnswer(q, chosen);
     // WiseXP: report wrong answer
@@ -907,6 +947,8 @@ function renderResult(app) {
         <div class="result-score">${score}<span class="result-score-total"> / ${total}</span></div>
         <div class="result-score-pct">${pct}% 正解</div>
         <div class="result-comment">${comment}</div>
+      ${pct === 100 ? '<div class="near-miss-msg perfect">PERFECT! 💎</div>' :
+        pct >= 80 ? `<div class="near-miss-msg near">あと${total - score}問でパーフェクト！もう一回？</div>` : ''}
         <div class="result-stats">
           累計: ${saved.totalGames}回プレイ / 正答率 ${lifetimePct}% / ベスト ${saved.bestScore}点
         </div>

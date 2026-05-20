@@ -854,6 +854,8 @@ function handleAnswer(chosen, btn) {
   } else {
     playWrongSound();
     recordWrongAnswer(q, chosen);
+    // WiseXP: report wrong answer
+    if(window.WiseXP) window.WiseXP.reportWrong({question:q.exQ, correct:q.correct, playerAnswer:chosen});
   }
   btn.classList.add(isCorrect ? 'correct' : 'wrong');
 
@@ -880,6 +882,9 @@ function renderResult(app) {
   else if (pct >= 60)  { emoji = '👍'; title = 'Good!';        comment = 'いい感じ！その調子！'; }
   else if (pct >= 40)  { emoji = '💪'; title = 'Keep going!';  comment = 'もう少し！頑張ろう！'; }
   else                 { emoji = '📖'; title = "Let's learn!"; comment = '導入からもう一度見てみよう！'; }
+
+  // WiseXP: report game result
+  if(window.WiseXP) window.WiseXP.reportGame({score:pct, correct:score, total:total, maxCombo:0, grade:''});
 
   // Save this game result
   recordGameResult(score, total);
@@ -937,6 +942,10 @@ document.addEventListener('click', function primeAudio() {
 }, { once: true });
 
 render();
+
+// WiseXP SDK init
+if(window.WiseXP) window.WiseXP.init('wh-questiongame');
 </script>
+<script src="https://cdn.jsdelivr.net/gh/winniek75/wise-xp-sdk@main/wise-xp.js"></script>
 </body>
 </html>

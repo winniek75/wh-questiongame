@@ -186,6 +186,7 @@ button { font-family: inherit; }
 .result-score-total { font-size: 1.5rem; color: #888; }
 .result-score-pct { color: #888; font-weight: 800; margin-top: 0.2rem; }
 .result-comment { margin: 0.8rem 0; color: #2C3E50; font-weight: 700; font-size: 1rem; }
+.result-stats { margin-top: 0.5rem; font-size: 0.8rem; color: #888; font-weight: 700; padding: 0.5rem; background: #F8F9FA; border-radius: 10px; }
 .result-actions { display: flex; flex-direction: column; gap: 0.6rem; padding: 0 0.2rem; }
 .result-actions button { padding: 1rem; border: none; border-radius: 18px; font-size: 1.1rem; font-weight: 900; cursor: pointer; }
 .result-actions .again { background: #FF6B6B; color: white; box-shadow: 0 5px 0 #C23B3B; }
@@ -397,6 +398,96 @@ const QUESTIONS = [
 const QUIZ_LENGTH = 10;
 
 // ==========================================
+// localStorage PERSISTENCE
+// ==========================================
+const STORAGE_KEY = 'wh_quiz_data';
+
+function loadSavedData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return { totalGames: 0, totalCorrect: 0, totalAnswered: 0, bestScore: 0, wrongAnswers: [] };
+}
+
+function saveData(data) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+}
+
+function recordGameResult(score, total) {
+  const data = loadSavedData();
+  data.totalGames++;
+  data.totalCorrect += score;
+  data.totalAnswered += total;
+  if (score > data.bestScore) data.bestScore = score;
+  saveData(data);
+}
+
+function recordWrongAnswer(question, chosenWord) {
+  const data = loadSavedData();
+  const entry = {
+    questionId: question.id,
+    exQ: question.exQ,
+    answer: question.answer,
+    correctWord: question.correct,
+    chosenWord: chosenWord,
+    timestamp: Date.now(),
+  };
+  data.wrongAnswers.push(entry);
+  // Keep only the last 200 wrong answers
+  if (data.wrongAnswers.length > 200) data.wrongAnswers = data.wrongAnswers.slice(-200);
+  saveData(data);
+}
+
+// ==========================================
+// SOUND EFFECTS (Web Audio API)
+// ==========================================
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playCorrectSound() {
+  try {
+    const ctx = getAudioCtx();
+    const freqs = [523.25, 659.25, 783.99]; // C-E-G chime
+    freqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.value = 0.2;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      const startTime = ctx.currentTime + i * 0.1;
+      osc.start(startTime);
+      gain.gain.setValueAtTime(0.2, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3);
+      osc.stop(startTime + 0.3);
+    });
+  } catch (e) {}
+}
+
+function playWrongSound() {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(150, ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.2);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.2);
+  } catch (e) {}
+}
+
+// ==========================================
 // STATE
 // ==========================================
 const state = {
@@ -577,6 +668,9 @@ function renderIntro(app) {
       </div>
     </div>
   `;
+  // Auto-speak the question word when entering intro card
+  setTimeout(() => speak(word.en), 300);
+
   document.getElementById('btn-home').onclick = () => goto('home');
   document.getElementById('play-word').onclick = () => speak(word.en);
   document.querySelectorAll('.play-ex').forEach(btn => {
@@ -722,6 +816,11 @@ function renderQuiz(app) {
     </div>
   `;
 
+  // Auto-speak the answer text when a new question appears
+  if (!answered) {
+    setTimeout(() => speak(q.answer), 300);
+  }
+
   document.getElementById('btn-home').onclick = () => {
     if (confirm('ホームに戻りますか？\n進行中のクイズは終了します。')) goto('home');
   };
@@ -749,7 +848,13 @@ function handleAnswer(chosen, btn) {
   const q = state.quiz.questions[state.quiz.idx];
   const isCorrect = chosen === q.correct;
   state.quiz.wasCorrect = isCorrect;
-  if (isCorrect) state.quiz.score++;
+  if (isCorrect) {
+    state.quiz.score++;
+    playCorrectSound();
+  } else {
+    playWrongSound();
+    recordWrongAnswer(q, chosen);
+  }
   btn.classList.add(isCorrect ? 'correct' : 'wrong');
 
   // Auto-play Q → pause → A
@@ -776,6 +881,14 @@ function renderResult(app) {
   else if (pct >= 40)  { emoji = '💪'; title = 'Keep going!';  comment = 'もう少し！頑張ろう！'; }
   else                 { emoji = '📖'; title = "Let's learn!"; comment = '導入からもう一度見てみよう！'; }
 
+  // Save this game result
+  recordGameResult(score, total);
+  const saved = loadSavedData();
+  const lifetimePct = saved.totalAnswered > 0 ? Math.round((saved.totalCorrect / saved.totalAnswered) * 100) : 0;
+
+  // TTS: announce result
+  setTimeout(() => speak(pct === 100 ? 'Perfect! Great job!' : `${title} You got ${score} out of ${total}.`), 400);
+
   app.innerHTML = `
     <div class="screen">
       <div class="top-nav">
@@ -789,6 +902,9 @@ function renderResult(app) {
         <div class="result-score">${score}<span class="result-score-total"> / ${total}</span></div>
         <div class="result-score-pct">${pct}% 正解</div>
         <div class="result-comment">${comment}</div>
+        <div class="result-stats">
+          累計: ${saved.totalGames}回プレイ / 正答率 ${lifetimePct}% / ベスト ${saved.bestScore}点
+        </div>
       </div>
       <div class="result-actions">
         <button class="again" id="again">🎮 もう一度クイズ (同じ設定)</button>
@@ -814,6 +930,8 @@ document.addEventListener('click', function primeAudio() {
     }
     const silentAudio = new Audio();
     silentAudio.play().catch(() => {});
+    // Prime Web Audio API context
+    getAudioCtx();
   } catch (e) {}
   document.removeEventListener('click', primeAudio);
 }, { once: true });

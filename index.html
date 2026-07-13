@@ -244,6 +244,71 @@ button { font-family: inherit; }
   .answer-text { font-size: 1.4rem; }
 }
 </style>
+<script>
+/* ============================================================
+ * MoWISE WiseGame Bridge v1.0 (2026-07-10)
+ * 各ゲームに埋め込み、iframe親(MoWISE portal)へスコアを送信する。
+ * 契約: src/lib/game-sdk.ts (source:'mowise-game',
+ *       GAME_READY / GAME_SCORE / GAME_COMPLETE / GAME_EXIT)
+ * スタンドアロン起動時(親なし)は何もしない=単体でも安全。
+ * ============================================================ */
+(function () {
+  if (window.WiseGame) return;
+
+  window.WiseGame = {
+    gameId: null,
+    _ctx: {},
+
+    init: function (config) {
+      config = config || {};
+      if (config.gameId) this.gameId = config.gameId;
+      this._send('GAME_READY', { gameId: this.gameId, version: config.version || '1.0' });
+    },
+
+    reportScore: function (data) {
+      this._send('GAME_SCORE', this._merge(data));
+    },
+
+    reportComplete: function (data) {
+      var payload = this._merge(data);
+      payload.completed = true;
+      this._send('GAME_COMPLETE', payload);
+    },
+
+    exit: function () {
+      this._send('GAME_EXIT', { gameId: this.gameId });
+    },
+
+    _merge: function (data) {
+      var out = { gameId: this.gameId };
+      var k;
+      for (k in this._ctx) out[k] = this._ctx[k];
+      for (k in (data || {})) out[k] = data[k];
+      return out;
+    },
+
+    _send: function (type, payload) {
+      try {
+        if (window.parent !== window) {
+          window.parent.postMessage(
+            { type: type, payload: payload, source: 'mowise-game' }, '*'
+          );
+        }
+      } catch (e) {}
+    }
+  };
+
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.source === 'mowise-parent' && e.data.type === 'INIT_GAME') {
+      var p = e.data.payload || {};
+      if (p.gameId) window.WiseGame.gameId = p.gameId;
+      window.WiseGame._ctx = { assignmentId: p.assignmentId, classId: p.classId };
+    }
+  });
+})();
+
+window.WiseGame.init({ gameId: 'wh-questiongame' });
+</script>
 </head>
 <body>
 <div id="app"></div>
@@ -251,6 +316,24 @@ button { font-family: inherit; }
 // ==========================================
 // DATA: 疑問詞 (13 types)
 // ==========================================
+
+// 疑問詞ルール解説(不正解時に表示)
+const WH_RULES = {
+  what:      '答えが「モノ・コト」のときは <b>What</b>(何)を使うよ',
+  who:       '答えが「人」のときは <b>Who</b>(だれ)を使うよ',
+  where:     '答えが「場所」のときは <b>Where</b>(どこ)を使うよ',
+  when:      '答えが「時・日にち」のときは <b>When</b>(いつ)を使うよ',
+  why:       '答えが「理由(Because...)」のときは <b>Why</b>(なぜ)を使うよ',
+  how:       '答えが「方法・様子」のときは <b>How</b>(どうやって)を使うよ',
+  how_long:  '答えが「期間(for two hours など)」のときは <b>How long</b>(どのくらいの間)だよ',
+  how_much:  '答えが「値段・量(数えられないもの)」のときは <b>How much</b>(いくら/どのくらい)だよ',
+  how_many:  '答えが「数(数えられるもの)」のときは <b>How many</b>(いくつ)だよ',
+  how_often: '答えが「頻度(every day など)」のときは <b>How often</b>(どのくらいよく)だよ',
+  how_old:   '答えが「年齢」のときは <b>How old</b>(何歳)だよ',
+  which:     '「どっち/どれ」と選ぶときは <b>Which</b> を使うよ',
+  whose:     '答えが「〜のもの(所有)」のときは <b>Whose</b>(だれの)だよ',
+};
+
 const QUESTION_WORDS = [
   { id: 'what',      en: 'What',      ja: 'なに / もの',               color: '#FF6B6B', shadow: '#C23B3B' },
   { id: 'who',       en: 'Who',       ja: 'だれ / ひと',               color: '#4ECDC4', shadow: '#2BA39B' },
@@ -833,6 +916,12 @@ function renderQuiz(app) {
         <div class="feedback-mark ${wasCorrect ? 'ok' : 'ng'}">
           ${wasCorrect ? '🎉 Great!' : '😢 Oops!'}
         </div>
+        ${!wasCorrect && state.quiz.lastExplanation ? `
+        <div style="margin:0.4rem auto 0; max-width:520px; background:rgba(255,255,255,0.92); color:#333;
+                    border-radius:12px; padding:0.55rem 0.9rem; font-size:0.92rem; line-height:1.5;
+                    border:2px solid #FFD166; text-align:center;">
+          💡 ${state.quiz.lastExplanation}
+        </div>` : ''}
         <div class="action-row">
           <button class="speak-btn" id="speak">🔊 もう一度</button>
           <button class="next-btn" id="next">${idx + 1 === questions.length ? '結果へ ▶' : '次の問題 ▶'}</button>
@@ -894,6 +983,7 @@ function handleAnswer(chosen, btn) {
     state.quiz.combo = 0;
     playWrongSound();
     recordWrongAnswer(q, chosen);
+    state.quiz.lastExplanation = WH_RULES[q.correct] || '';
     // WiseXP: report wrong answer
     if(window.WiseXP) window.WiseXP.reportWrong({question:q.exQ, correct:q.correct, playerAnswer:chosen});
   }
@@ -925,6 +1015,16 @@ function renderResult(app) {
 
   // WiseXP: report game result
   if(window.WiseXP) window.WiseXP.reportGame({score:pct, correct:score, total:total, maxCombo:0, grade:''});
+
+  // → MoWISE portal へスコア送信 (WiseGame Bridge)
+  try {
+    const wrongLog = (loadSavedData().wrongAnswers || []).slice(-20);
+    window.WiseGame && window.WiseGame.reportComplete({
+      score: pct, maxScore: 100, accuracy: pct,
+      timeSpent: Math.round((Date.now() - (window.__wiseStartTime || Date.now())) / 1000),
+      metadata: { correct: score, total: total, recentWrong: wrongLog }
+    });
+  } catch(e) {}
 
   // Save this game result
   recordGameResult(score, total);

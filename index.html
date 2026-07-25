@@ -1018,11 +1018,16 @@ function renderResult(app) {
 
   // → MoWISE portal へスコア送信 (WiseGame Bridge)
   try {
-    const wrongLog = (loadSavedData().wrongAnswers || []).slice(-20);
+    const whTagMap = {What:'wh_what',Who:'wh_who',Where:'wh_where',When:'wh_when',Why:'wh_why',How:'wh_how',Whom:'wh_who',Whose:'wh_who'};
+    const rawWrong = (loadSavedData().wrongAnswers || []).slice(-20);
+    const wrongAnswers = rawWrong.map(w => ({
+      q: w.exQ || w.questionId, correct: w.correctWord, chosen: w.chosenWord,
+      tag: whTagMap[w.correctWord] || 'other_grammar'
+    }));
     window.WiseGame && window.WiseGame.reportComplete({
       score: pct, maxScore: 100, accuracy: pct,
       timeSpent: Math.round((Date.now() - (window.__wiseStartTime || Date.now())) / 1000),
-      metadata: { correct: score, total: total, recentWrong: wrongLog }
+      metadata: { correct: score, total: total, wrongAnswers: wrongAnswers }
     });
   } catch(e) {}
 
